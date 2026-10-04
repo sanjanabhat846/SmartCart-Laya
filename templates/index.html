@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - AI-Powered Shopping Decision Assistant</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Dashboard Header -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="sparkle-dot"></span>
+                </div>
+                <div class="brand-text">
+                    <h1>SmartCart</h1>
+                    <p class="subtitle">AI-Powered Shopping Decision Assistant</p>
+                </div>
+            </div>
+            <div class="header-badge">
+                <span class="pulse-indicator"></span>
+                <i class="fa-solid fa-brain"></i> Powered by Laya Engine
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dashboard-grid">
+            <!-- Left Column: Input Form Card -->
+            <section class="card input-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-sliders"></i> Order & Customer Parameters</h2>
+                    <p>Enter state information to evaluate promotions and urgency with Laya.</p>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="presets-bar">
+                    <span class="presets-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Quick Presets:</span>
+                    <button type="button" class="preset-chip" onclick="applyPreset('student')">Student Urgent</button>
+                    <button type="button" class="preset-chip" onclick="applyPreset('loyalty')">VIP Loyal</button>
+                    <button type="button" class="preset-chip" onclick="applyPreset('standard')">Standard Cart</button>
+                </div>
+
+                <form id="decisionForm" onsubmit="handleAnalyze(event)">
+                    <!-- Customer Information Section -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fa-solid fa-user-gear"></i> Customer Information
+                        </div>
+
+                        <!-- Student Status Toggle -->
+                        <div class="form-group toggle-group">
+                            <div class="toggle-label">
+                                <label for="isStudent">Student Status</label>
+                                <span class="input-hint">Eligible for student-targeted promotions</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="isStudent" name="is_student" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-row">
+                            <!-- Previous Orders -->
+                            <div class="form-group">
+                                <label for="previousOrders"><i class="fa-solid fa-box"></i> Previous Orders</label>
+                                <input type="number" id="previousOrders" name="previous_orders" min="0" value="12" required placeholder="e.g. 5">
+                            </div>
+
+                            <!-- Previous Returns -->
+                            <div class="form-group">
+                                <label for="previousReturns"><i class="fa-solid fa-rotate-left"></i> Previous Returns</label>
+                                <input type="number" id="previousReturns" name="previous_returns" min="0" value="1" required placeholder="e.g. 0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cart Information Section -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fa-solid fa-bag-shopping"></i> Cart Details
+                        </div>
+                        <div class="form-group">
+                            <label for="cartTotal"><i class="fa-solid fa-tag"></i> Cart Total ($)</label>
+                            <div class="currency-input-wrapper">
+                                <span class="currency-symbol">$</span>
+                                <input type="number" id="cartTotal" name="cart_total" min="0" step="0.01" value="150.00" required placeholder="150.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Message Section -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fa-solid fa-comment-dots"></i> Customer Message
+                        </div>
+                        <div class="form-group">
+                            <label for="customerMessage">Note / Special Instructions</label>
+                            <textarea id="customerMessage" name="message" rows="3" placeholder="I need this order urgently. Can I get a discount?">I need this order urgently. Can I get a discount?</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Prominent Submit Button -->
+                    <button type="submit" id="analyzeBtn" class="btn-analyze">
+                        <span class="btn-content">
+                            <i class="fa-solid fa-microchip"></i> Analyze Order
+                        </span>
+                        <span class="btn-spinner hidden">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Analyzing with Laya...
+                        </span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Right Column: Results & Flow Card -->
+            <div class="right-column">
+                <!-- Laya Decision Results Card -->
+                <section class="card results-card" id="resultsCard">
+                    <div class="card-header flex-header">
+                        <div>
+                            <h2><i class="fa-solid fa-chart-pie"></i> Laya AI Decisions</h2>
+                            <p>Real-time predictive output from the backend engine</p>
+                        </div>
+                        <div id="statusBadge" class="status-pill status-ready">
+                            <i class="fa-solid fa-circle-check"></i> Ready
+                        </div>
+                    </div>
+
+                    <!-- Initial State Message -->
+                    <div id="emptyState" class="empty-state">
+                        <div class="empty-icon"><i class="fa-solid fa-wand-magic"></i></div>
+                        <h3>No Analysis Yet</h3>
+                        <p>Fill in the customer and cart details, then click <strong>"Analyze Order"</strong> to request decisions from Laya.</p>
+                    </div>
+
+                    <!-- Loading State Skeleton -->
+                    <div id="loadingState" class="loading-state hidden">
+                        <div class="pulse-loader">
+                            <div class="loader-spinner"></div>
+                            <p class="loader-text">Analyzing customer state with Laya...</p>
+                            <span class="loader-sub">Evaluating criteria: promotion choice, urgency score, and review necessity</span>
+                        </div>
+                    </div>
+
+                    <!-- Error Alert State -->
+                    <div id="errorState" class="error-alert hidden">
+                        <div class="error-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="error-details">
+                            <h4 id="errorTitle">Decision Request Failed</h4>
+                            <p id="errorMessage">Unable to communicate with the Flask decision service.</p>
+                        </div>
+                    </div>
+
+                    <!-- Decisions Content Container -->
+                    <div id="resultsContent" class="results-content hidden">
+                        <!-- Decision 1: Promotion -->
+                        <div class="decision-block promo-block">
+                            <div class="decision-label">
+                                <i class="fa-solid fa-gift"></i> Recommended Promotion
+                            </div>
+                            <div class="decision-value-wrapper">
+                                <div id="promoValue" class="promo-badge promo-student">
+                                    <i id="promoIcon" class="fa-solid fa-graduation-cap"></i>
+                                    <span id="promoText">Student Discount</span>
+                                </div>
+                            </div>
+                            <div class="decision-meta" id="promoMeta">
+                                Laya selected standard discount target based on student verification status.
+                            </div>
+                        </div>
+
+                        <!-- Decision 2: Urgency Score -->
+                        <div class="decision-block urgency-block">
+                            <div class="decision-header-row">
+                                <div class="decision-label">
+                                    <i class="fa-solid fa-gauge-high"></i> Order Urgency Score
+                                </div>
+                                <div id="urgencyScoreText" class="score-badge">6.3 / 10</div>
+                            </div>
+
+                            <!-- Scale Progress Bar -->
+                            <div class="urgency-meter-container">
+                                <div class="urgency-meter-track">
+                                    <div id="urgencyBar" class="urgency-meter-fill" style="width: 63%;"></div>
+                                </div>
+                                <div class="scale-ticks">
+                                    <span>0 (Low)</span>
+                                    <span>2.5</span>
+                                    <span>5.0 (Med)</span>
+                                    <span>7.5</span>
+                                    <span>10 (High)</span>
+                                </div>
+                            </div>
+                            <div class="decision-meta" id="urgencyMeta">
+                                Evaluated from order message urgency cues and total cart value.
+                            </div>
+                        </div>
+
+                        <!-- Decision 3: Manual Review -->
+                        <div class="decision-block review-block">
+                            <div class="decision-label">
+                                <i class="fa-solid fa-shield-halved"></i> Manual Review Required
+                            </div>
+                            <div class="review-status-wrapper">
+                                <div id="reviewBadge" class="review-badge review-no">
+                                    <i id="reviewIcon" class="fa-solid fa-circle-check"></i>
+                                    <span id="reviewText">NO</span>
+                                </div>
+                                <span id="reviewExplanation" class="review-subtext">Order satisfies automated processing conditions.</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Architecture & Pipeline Flow Card -->
+                <section class="card flow-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-network-wired"></i> How SmartCart Decides</h2>
+                        <p>End-to-end data flow architecture</p>
+                    </div>
+
+                    <div class="pipeline-diagram">
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i class="fa-solid fa-database"></i></div>
+                            <div class="step-title">Customer State</div>
+                            <div class="step-desc">Form Data & Cart</div>
+                        </div>
+
+                        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i class="fa-brands fa-python"></i></div>
+                            <div class="step-title">Flask Backend</div>
+                            <div class="step-desc">/decision REST API</div>
+                        </div>
+
+                        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="pipeline-step highlight-step">
+                            <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
+                            <div class="step-title">Laya Model</div>
+                            <div class="step-desc">Router.predict()</div>
+                        </div>
+
+                        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i class="fa-solid fa-sliders"></i></div>
+                            <div class="step-title">3 Decisions</div>
+                            <div class="step-desc">Promo, Urgency, Review</div>
+                        </div>
+
+                        <div class="pipeline-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+                        <div class="pipeline-step">
+                            <div class="step-icon"><i class="fa-solid fa-desktop"></i></div>
+                            <div class="step-title">SmartCart Result</div>
+                            <div class="step-desc">UI Display</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>SmartCart &copy; 2026 &bull; Integrated with Laya AI Decision Engine</p>
+        </footer>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
